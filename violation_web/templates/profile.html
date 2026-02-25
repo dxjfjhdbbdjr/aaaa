@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block title %}Hồ Sơ Cá Nhân{% endblock %}
+{% block extra_head %}
+<style>
+  /* Profile page styles */
+  .profile-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .profile-header img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+  }
+  .profile-header h2 {
+    margin: 0;
+    font-size: 28px;
+    color: #1f2937;
+  }
+  .profile-form label {
+    font-weight: 600;
+    margin-top: 12px;
+    display: block;
+  }
+  .profile-form input,
+  .profile-form textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+  }
+  .profile-form textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  .profile-form button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  .profile-form button:hover {
+    background: #1e40af;
+  }
+
+  /* Styles for avatar menu and modal */
+  .avatar-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .avatar-menu {
+    display: none;
+    position: absolute;
+    top: 110%;
+    left: 0;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 2000;
+    min-width: 150px;
+  }
+  .avatar-menu a {
+    display: block;
+    padding: 8px 12px;
+    color: #cbd5e1;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  .avatar-menu a:hover {
+    background: #374151;
+    color: #ffffff;
+  }
+  .avatar-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  }
+  .avatar-modal-content {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+    text-align: center;
+  }
+  .avatar-modal-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+  .avatar-modal-content button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .avatar-modal-content button:hover {
+    background: #1e40af;
+  }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+  function toggleAvatarMenu(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    var menu = document.getElementById('avatarMenu');
+    if (!menu) return;
+    if (menu.style.display === 'block') {
+      menu.style.display = 'none';
+    } else {
+      menu.style.display = 'block';
+    }
+  }
+  document.addEventListener('click', function(e) {
+    var menu = document.getElementById('avatarMenu');
+    var wrapper = document.querySelector('.avatar-wrapper');
+    if (!menu || !wrapper) return;
+    if (menu.style.display === 'block' && !menu.contains(e.target) && !wrapper.contains(e.target)) {
+      menu.style.display = 'none';
+    }
+  });
+  function viewAvatar(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var modal = document.getElementById('avatarModal');
+    if (modal) modal.style.display = 'flex';
+    var menu = document.getElementById('avatarMenu');
+    if (menu) menu.style.display = 'none';
+  }
+  function closeAvatarModal() {
+    var modal = document.getElementById('avatarModal');
+    if (modal) modal.style.display = 'none';
+  }
+  function chooseAvatar(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var input = document.getElementById('avatarInput');
+    if (input) input.click();
+    var menu = document.getElementById('avatarMenu');
+    if (menu) menu.style.display = 'none';
+  }
+</script>
+{% endblock %}
+{% block content %}
+<div class="profile-container">
+  <div class="profile-header">
+    <div class="avatar-wrapper" onclick="toggleAvatarMenu(event)">
+      {% if user.avatar_path %}
+        <img src="{{ url_for('static', filename='images/' + user.avatar_path) }}" alt="Avatar" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid #e5e7eb; cursor:pointer;">
+      {% else %}
+        <div style="width:120px;height:120px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:64px; cursor:pointer;">👤</div>
+      {% endif %}
+      <div id="avatarMenu" class="avatar-menu">
+        <a href="#" onclick="viewAvatar(event)">Xem ảnh đại diện</a>
+        <a href="#" onclick="chooseAvatar(event)">Chọn ảnh đại diện mới</a>
+      </div>
+    </div>
+    <h2>{{ user.display_name }}</h2>
+  </div>
+  <form class="profile-form" method="post" enctype="multipart/form-data">
+    <label for="display_name">Tên hiển thị</label>
+    <input type="text" id="display_name" name="display_name" value="{{ user.display_name }}" required>
+
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" value="{{ user.email }}" required>
+
+    <label for="bio">Mô tả (giới thiệu bản thân)</label>
+    <textarea id="bio" name="bio" placeholder="Viết một vài dòng về bạn...">{{ user.bio or '' }}</textarea>
+
+    {# Hidden file input for avatar selection; triggered via menu #}
+    <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none;">
+
+    <label for="current_password">Mật khẩu hiện tại (để xác nhận thay đổi)</label>
+    <input type="password" id="current_password" name="current_password" required>
+
+    <label for="new_password">Mật khẩu mới</label>
+    <input type="password" id="new_password" name="new_password">
+
+    <label for="new_password2">Xác nhận mật khẩu mới</label>
+    <input type="password" id="new_password2" name="new_password2">
+
+    <button type="submit">Cập Nhật Hồ Sơ</button>
+  </form>
+</div>
+<!-- Avatar modal for viewing current avatar -->
+<div id="avatarModal" class="avatar-modal">
+  <div class="avatar-modal-content">
+    {% if user.avatar_path %}
+      <img src="{{ url_for('static', filename='images/' + user.avatar_path) }}" alt="Avatar lớn">
+    {% else %}
+      <div style="font-size:64px;">👤</div>
+    {% endif %}
+    <button onclick="closeAvatarModal()">Đóng</button>
+  </div>
+</div>
+{% endblock %}

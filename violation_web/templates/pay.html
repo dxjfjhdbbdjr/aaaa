@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Nộp tiền{% endblock %}
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+  <h2 style="text-align:center; margin-bottom:20px;">Nộp Tiền</h2>
+  {% if admin_select and student_name %}
+    <p style="text-align:center; margin-bottom:15px; font-size:16px;">Thanh toán cho: <strong>{{ student_name }}</strong></p>
+  {% endif %}
+  {% if total_unpaid > 0 %}
+    <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:20px; box-shadow:0 2px 6px rgba(0,0,0,0.1);">
+      <p><strong>Số tiền cần nộp:</strong> {{ format_currency(total_unpaid) }}</p>
+      <p><strong>Mã lỗi liên quan:</strong> {{ codes|join(', ') }}</p>
+      <p><strong>Nội dung chuyển khoản:</strong></p>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="text" id="transferMsg" value="{{ payment_message }}" readonly style="flex:1; padding:6px; border:1px solid #d1d5db; border-radius:4px;">
+        <button type="button" onclick="copyToClipboard()" style="padding:6px 10px; background:#2563eb; color:#fff; border:none; border-radius:4px; cursor:pointer;">Copy</button>
+      </div>
+      <div style="margin-top:20px; text-align:center;">
+        <img src="{{ url_for('static', filename='images/qr_momo.png') }}" alt="QR Code" style="max-width:300px; width:100%; height:auto; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.2);">
+      </div>
+      <div style="margin-top:20px;">
+        <h3>Hướng Dẫn Nộp</h3>
+        <ul style="list-style:disc inside; padding-left:15px;">
+          {% for item in instructions %}
+            <li>{{ item }}</li>
+          {% endfor %}
+          <li>Bước 3: Ấn vào nút <strong>Đã Nộp Tiền</strong> phía dưới để xác nhận.</li>
+        </ul>
+      </div>
+      <form method="post" action="{{ url_for('confirm_payment', username=user.username) }}" onsubmit="return confirmPayment();" style="margin-top:20px; text-align:center;">
+        {% if admin_select and student_name %}
+          <input type="hidden" name="student" value="{{ student_name }}">
+        {% endif %}
+        <button type="submit" style="padding:10px 20px; background:#16a34a; color:#fff; border:none; border-radius:4px; font-size:16px; cursor:pointer;">Đã Nộp Tiền</button>
+      </form>
+    </div>
+  {% else %}
+    <p style="text-align:center; font-size:16px; color:#374151;">Bạn không có khoản nợ nào cần thanh toán.</p>
+  {% endif %}
+</div>
+<script>
+function copyToClipboard() {
+  var copyText = document.getElementById("transferMsg");
+  copyText.select();
+  copyText.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+  alert("Đã sao chép nội dung: " + copyText.value);
+}
+function confirmPayment() {
+  return confirm('Bạn đã nộp đủ số tiền theo hướng dẫn?');
+}
+</script>
+{% endblock %}

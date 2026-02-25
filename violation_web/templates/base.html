@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quản lý Vi Phạm{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+        }
+        header {
+            /* Use a gentle gradient for a modern look */
+            background: linear-gradient(135deg, #3730a3, #2563eb);
+            color: #ffffff;
+            padding: 15px 20px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        /* Layout for the navigation bar.  We use absolute positioning for
+           the left (volume) and right (user/notification) sections so that
+           the main navigation icons remain centred in the available space.
+           This resolves alignment issues on wide displays. */
+        /* Navigation bar layout.  We split the navigation into three logical
+           areas: a small left container for the volume icon, a central
+           container for the main navigation icons, and a right
+           container for notifications and user info.  This structure
+           ensures that the primary navigation icons remain centred on
+           the page regardless of the content on either side. */
+        nav {
+            margin-top: 8px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .nav-music {
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .nav-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-right {
+            /* no fixed margin so the bar remains balanced */
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        nav a {
+            color: #cbd5e1;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 20px;
+            line-height: 1;
+        }
+        nav a:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+        /* Style for music toggle icon image */
+        .music-toggle-icon {
+            width: 32px;
+            height: 32px;
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .music-toggle-icon:hover {
+            background: #374151;
+        }
+        /* Hide text labels in nav links, using title attribute instead.  Icons serve as
+           the main visual indicator. */
+        nav a span.label {
+            display: none;
+        }
+
+        /* Icons under the header for analog speaker and clock */
+        .header-icons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 6px;
+            gap: 60px;
+        }
+        .header-icons .big-icon {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+        }
+        @media (max-width: 600px) {
+            /* Stack nav icons evenly on small screens */
+            .nav-left a {
+                flex: 1;
+                text-align: center;
+            }
+        }
+        /* Notification badge icon */
+        .nav-notification {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Define the left and right navigation containers for the classic layout */
+        .nav-left {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .nav-notification .badge {
+            position: absolute;
+            top: -4px;
+            right: -8px;
+            background: #f87171;
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Styles for the notification dropdown panel */
+        .notification-panel {
+            display: none;
+            position: absolute;
+            right: 20px;
+            top: 80px;
+            width: 300px;
+            max-height: 400px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            z-index: 1000;
+            color: #e5e7eb;
+        }
+        .notification-panel .notification-item {
+            border-bottom: 1px solid #374151;
+            padding: 6px 8px;
+        }
+        .notification-panel .notification-item.unread {
+            background: #334155;
+        }
+        .notification-panel .notification-item:hover {
+            background: #475569;
+        }
+        /* User dropdown */
+        .user-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .user-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            color: #cbd5e1;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+        }
+        .user-dropdown-toggle:hover {
+            color: #ffffff;
+        }
+        .user-dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            min-width: 140px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        .user-dropdown-menu a {
+            display: block;
+            padding: 8px 12px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .user-dropdown-menu a:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+        .container {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success { background: #d1fae5; border-color: #10b981; color: #065f46; }
+        .alert-danger  { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .alert-warning { background: #fef9c3; border-color: #facc15; color: #78350f; }
+        .alert-info    { background: #bfdbfe; border-color: #3b82f6; color: #1e40af; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+        tbody tr:nth-child(odd) {
+            background-color: #fafafa;
+        }
+        tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+        form label {
+            display: block;
+            margin-top: 10px;
+        }
+        form input, form select, form textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+        form button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background: #1e40af;
+        }
+
+        /* Generic button style for links */
+        .button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .button:hover {
+            background: #1e40af;
+            color: #ffffff;
+        }
+        .text-right { text-align: right; }
+        .small { font-size: 0.9em; color: #6b7280; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header>
+        <h1>Quản lý Vi Phạm</h1>
+        <nav>
+            <div class="nav-left">
+                <a href="{{ url_for('index') }}" title="Trang Chủ">🏠</a>
+                {% if user %}
+                    <a href="{{ url_for('summary') }}" title="Bảng Tổng Hợp">📊</a>
+                    {% if user.is_admin %}
+                        <a href="{{ url_for('add_violation') }}" title="Ghi Vi Phạm">📝</a>
+                    {% endif %}
+                    <a href="{{ url_for('history') }}" title="Lịch Sử Nộp Tiền">📜</a>
+                    {% if user.is_admin %}
+                        <a href="{{ url_for('admin') }}" title="Quản Trị">⚙️</a>
+                        {# Show user management link for all admins.  Super admin check removed so that
+                           regular admins can access the list of users.  Actions such as granting
+                           roles and deleting accounts remain restricted by the route logic. #}
+                        <a href="{{ url_for('admin_users') }}" title="Quản Lí User">👥</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="nav-right">
+                {% if user %}
+                    {% if nav_outstanding and nav_outstanding > 0 %}
+                        <a href="{{ url_for('pay', username=user.username) }}" title="Khoản Nợ" style="color:#fbbf24; font-size:20px;">💳</a>
+                        <span style="color:#fbbf24; font-size:14px;">{{ format_currency(nav_outstanding) }}</span>
+                    {% endif %}
+                    <div class="nav-notification" onclick="toggleNotificationPanel(event)" title="Thông báo">
+                        🔔
+                        {% if nav_notifications and nav_notifications > 0 %}
+                            <span class="badge">{{ nav_notifications }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="user-dropdown">
+                        <button type="button" class="user-dropdown-toggle" onclick="toggleUserMenu()">
+                            {% if user.avatar_path %}
+                                <img src="{{ url_for('static', filename='images/' + user.avatar_path) }}" alt="avatar" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                            {% else %}
+                                👤
+                            {% endif %}
+                            {{ user.display_name }} ({{ 'Admin' if user.is_admin else 'Học Sinh' }}) ▼
+                        </button>
+                        <div id="userMenu" class="user-dropdown-menu">
+                            <a href="{{ url_for('profile') }}">Hồ Sơ</a>
+                            <a href="{{ url_for('logout') }}">Đăng xuất</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{{ url_for('login') }}" title="Đăng Nhập">🔐</a>
+                    <a href="{{ url_for('register') }}" title="Đăng Kí">➕</a>
+                {% endif %}
+            </div>
+        </nav>
+        {# Notification dropdown panel.  Initially hidden; toggled via JS. #}
+        <div id="notificationPanel" class="notification-panel">
+            {% if nav_notification_list and nav_notification_list|length > 0 %}
+                {% for note in nav_notification_list %}
+                    <div class="notification-item {% if not note.is_read %}unread{% endif %}">
+                        <a href="{{ url_for('notification_detail', note_id=note.id) }}" style="color:inherit; text-decoration:none; display:block; padding:6px 10px;">
+                            {{ note.message }}
+                            <br>
+                            <small style="font-size:10px; color:#94a3b8;">{{ note.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </a>
+                    </div>
+                {% endfor %}
+                <div class="notification-footer" style="text-align:center; padding:6px; border-top:1px solid #374151;">
+                    <a href="#" onclick="markAllNotificationsRead(event)" style="color:#60a5fa; font-size:12px; text-decoration:none;">Đánh dấu tất cả đã đọc</a>
+                </div>
+            {% else %}
+                <div class="notification-empty" style="padding:10px; text-align:center; color:#94a3b8; font-size:12px;">Không có thông báo.</div>
+            {% endif %}
+        </div>
+    </header>
+    <div class="container">
+        {% if breadcrumbs %}
+        <nav aria-label="breadcrumb" style="margin-bottom:10px; font-size:14px; color:#6b7280;">
+            {% for crumb in breadcrumbs %}
+                {% if not loop.last %}
+                    <a href="{{ crumb.url }}" style="color:#2563eb; text-decoration:none; margin-right:4px;">{{ crumb.label }}</a> &gt;
+                {% else %}
+                    <span style="font-weight:600; margin-left:4px;">{{ crumb.label }}</span>
+                {% endif %}
+            {% endfor %}
+        </nav>
+        {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, msg in messages %}
+                <div class="alert alert-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+    {% block extra_scripts %}{% endblock %}
+    <!-- Persistent background music using YouTube iFrame API -->
+    <div id="bg-music" style="display:none;"></div>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+    // Toggle user dropdown visibility
+    function toggleUserMenu() {
+        var menu = document.getElementById('userMenu');
+        if (menu.style.display === 'block') {
+            menu.style.display = 'none';
+        } else {
+            menu.style.display = 'block';
+        }
+    }
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        var menu = document.getElementById('userMenu');
+        var toggle = document.querySelector('.user-dropdown-toggle');
+        if (menu && toggle && !toggle.contains(event.target) && !menu.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
+    // YouTube background music playback across pages
+    var bgPlayer;
+    function onYouTubeIframeAPIReady() {
+        var startTime = parseInt(localStorage.getItem('yt_bg_position') || '0', 10);
+        bgPlayer = new YT.Player('bg-music', {
+            height: '0',
+            width: '0',
+            videoId: 'PQHV_9zzgBo',
+            playerVars: {
+                autoplay: 1,
+                loop: 1,
+                playlist: 'PQHV_9zzgBo',
+                start: startTime
+            },
+            events: {
+                'onReady': function(e) {
+                    // Resume or pause based on stored preference
+        var muted = localStorage.getItem('musicMuted');
+        if (muted === 'true') {
+            e.target.pauseVideo();
+            // set volume icon to muted state by reducing opacity
+            var icon = document.getElementById('volume-icon-img');
+            if (icon) icon.style.opacity = '0.4';
+        } else {
+            e.target.playVideo();
+            var icon2 = document.getElementById('volume-icon-img');
+            if (icon2) icon2.style.opacity = '1';
+        }
+                    // periodically save playback time
+                    setInterval(function() {
+                        try {
+                            var t = Math.floor(bgPlayer.getCurrentTime());
+                            localStorage.setItem('yt_bg_position', t);
+                        } catch (ex) {}
+                    }, 5000);
+                }
+            }
+        });
+    }
+    // Toggle music playback and persist preference
+    function toggleMusic() {
+        if (!bgPlayer) return;
+        var icon = document.getElementById('volume-icon-img');
+        var muted = localStorage.getItem('musicMuted');
+        if (muted === 'true') {
+            // currently muted, so resume
+            bgPlayer.playVideo();
+            localStorage.setItem('musicMuted', 'false');
+            if (icon) icon.style.opacity = '1';
+        } else {
+            // pause
+            bgPlayer.pauseVideo();
+            localStorage.setItem('musicMuted', 'true');
+            if (icon) icon.style.opacity = '0.4';
+        }
+    }
+    // Clock display updating every second
+    function updateClock() {
+        var now = new Date();
+        // Use Asia/Bangkok timezone
+        var options = { timeZone: 'Asia/Bangkok', hour12: false };
+        // Format date and time (YYYY-MM-DD HH:MM:SS)
+        var dateStr = now.toLocaleDateString('sv-SE', options);
+        var timeStr = now.toLocaleTimeString('it-IT', options);
+        var clockEl = document.getElementById('clock-display');
+        if (clockEl) {
+            clockEl.textContent = timeStr + ' ' + dateStr;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        updateClock();
+        setInterval(updateClock, 1000);
+    });
+    // Save playback position when leaving the page
+    window.addEventListener('beforeunload', function() {
+        try {
+            if (bgPlayer && bgPlayer.getCurrentTime) {
+                var t = Math.floor(bgPlayer.getCurrentTime());
+                localStorage.setItem('yt_bg_position', t);
+            }
+        } catch (ex) {}
+    });
+
+    // Toggle the notification dropdown panel
+    function toggleNotificationPanel(event) {
+        // Prevent link navigation and event propagation
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        var panel = document.getElementById('notificationPanel');
+        if (!panel) return;
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+        } else {
+            panel.style.display = 'block';
+        }
+    }
+    // Hide notification panel when clicking outside
+    document.addEventListener('click', function(e) {
+        var panel = document.getElementById('notificationPanel');
+        var bell = document.querySelector('.nav-notification');
+        if (!panel || !bell) return;
+        if (panel.style.display === 'block' && !panel.contains(e.target) && !bell.contains(e.target)) {
+            panel.style.display = 'none';
+        }
+    });
+    // Mark all notifications as read via POST request and refresh
+    function markAllNotificationsRead(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        fetch('{{ url_for('notifications_read_all') }}', { method: 'POST' })
+            .then(function() { window.location.reload(); });
+    }
+    </script>
+    <!-- Footer -->
+    <footer style="text-align:center; padding:10px 0; font-size:14px; color:#6b7280; background:#f9fafb; margin-top:20px;">
+      © 2025 Bản quyền thuộc về Duck Think
+    </footer>
+</body>
+</html>

@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% block title %}Bảng Tổng Hợp{% endblock %}
+{% block extra_head %}
+<style>
+  /* Styles specific to the summary page.  These styles override the
+     generic table rules defined in the base template to create a
+     colourful, easy‑to‑read summary table similar to the example
+     provided. */
+  .summary-container {
+    width: 100%;
+    margin: 0 auto;
+  }
+  .summary-header {
+    background: #3b4a6b;
+    color: #fff;
+    font-size: 24px;
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px 8px 0 0;
+    letter-spacing: 1px;
+  }
+  table.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  table.summary-table th,
+  table.summary-table td {
+    border: 1px solid #aaaaaa;
+    padding: 10px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  /* Hover effect for rows */
+  table.summary-table tbody tr:hover {
+    background-color: #fef3c7;
+  }
+  table.summary-table th {
+    background: #e1e9f6;
+    font-weight: 600;
+  }
+  /* Specific colouring for violation and finance columns */
+  table.summary-table .vi-pham {
+    background: #cbe1eb;
+  }
+  table.summary-table .tong-tuan {
+    background: #dae6ce;
+    font-weight: bold;
+  }
+  table.summary-table .tien-phat {
+    background: #fff37b;
+    font-weight: bold;
+  }
+  table.summary-table .ghi-chu {
+    background: #f8f8f8;
+  }
+  /* Summary boxes below the table */
+  .summary {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  /* Colour outstanding amounts: red when positive, green when zero */
+  .remaining-positive {
+    color: #dc2626;
+    font-weight: bold;
+  }
+  .remaining-zero {
+    color: #16a34a;
+    font-weight: bold;
+    background: #dcfce7;
+  }
+  .box-green {
+    background: #b8e994;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .box-red {
+    background: #f66a6a;
+    padding: 14px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+  }
+  @media (max-width: 900px) {
+    table.summary-table th,
+    table.summary-table td { font-size: 12px; }
+    .summary-header { font-size: 20px; }
+  }
+
+  /* Fade‑in animation for table rows */
+  table.summary-table tbody tr {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: fadeInRow 0.4s ease forwards;
+  }
+  table.summary-table tbody tr:nth-child(1) { animation-delay: 0s; }
+  table.summary-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+  table.summary-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+  table.summary-table tbody tr:nth-child(4) { animation-delay: 0.15s; }
+  table.summary-table tbody tr:nth-child(5) { animation-delay: 0.2s; }
+  table.summary-table tbody tr:nth-child(6) { animation-delay: 0.25s; }
+  table.summary-table tbody tr:nth-child(7) { animation-delay: 0.3s; }
+  table.summary-table tbody tr:nth-child(8) { animation-delay: 0.35s; }
+  table.summary-table tbody tr:nth-child(9) { animation-delay: 0.4s; }
+  table.summary-table tbody tr:nth-child(10) { animation-delay: 0.45s; }
+  @keyframes fadeInRow {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<h2 style="margin-bottom:10px; font-size:22px; font-weight:600;">Lọc Dữ Liệu</h2>
+<form method="get" action="{{ url_for('summary') }}">
+    {# Add an id so we can reference the form in JS #}
+    <div id="filterFormWrapper">
+    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
+        <div style="flex:1 1 160px; min-width:160px;">
+            <label for="week">Tuần</label>
+            <select name="week" id="week">
+                <option value="">-- Chọn tuần --</option>
+                {% for w in weeks %}
+                    <option value="{{ w }}" {% if selected_week and selected_week|int == w %}selected{% endif %}>{{ w }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="flex:1 1 160px; min-width:160px;">
+            <label for="day">Ngày (yyyy-mm-dd)</label>
+            <input type="date" name="day" id="day" value="{{ selected_day }}">
+        </div>
+        <div style="flex:1 1 180px; min-width:180px;">
+            <label for="student">Họ và tên</label>
+            <select name="student" id="student">
+                <option value="">-- Tất cả --</option>
+                {% for s in students %}
+                    <option value="{{ s }}" {% if selected_student == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="flex:1 1 180px; min-width:180px;">
+            <label for="error_code">Mã lỗi</label>
+            <select name="error_code" id="error_code">
+                <option value="">-- Tất cả --</option>
+                {% for e in errors %}
+                    <option value="{{ e.code }}" {% if selected_error == e.code %}selected{% endif %}>{{ e.code }} - {{ e.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="flex:1 1 160px; min-width:160px;">
+            <label for="status">Trạng thái</label>
+            <select name="status" id="status">
+                <option value="">-- Tất cả --</option>
+                <option value="unpaid" {% if selected_status == 'unpaid' %}selected{% endif %}>Chưa nộp</option>
+                <option value="paid" {% if selected_status == 'paid' %}selected{% endif %}>Đã nộp</option>
+            </select>
+        </div>
+        <div style="flex:0 1 auto;">
+            <button type="submit" onclick="return showFilterModal(event);">Lọc</button>
+        </div>
+    </div>
+    </div>
+</form>
+
+<script>
+// Build a confirmation modal instead of using confirm()
+function showFilterModal(e) {
+    e.preventDefault();
+    // Build the message summarising filters
+    var week = document.getElementById('week').value;
+    var day = document.getElementById('day').value;
+    var student = document.getElementById('student').value;
+    var error = document.getElementById('error_code').value;
+    var filters = [];
+    if (week) filters.push('tuần ' + week);
+    if (day) filters.push('ngày ' + day);
+    if (student) filters.push('học sinh ' + student);
+    if (error) filters.push('mã lỗi ' + error);
+    var msg = 'Bạn có chắc chắn muốn áp dụng';
+    if (filters.length > 0) {
+        msg += ' bộ lọc: ' + filters.join(', ') + '?';
+    } else {
+        msg += ' tất cả dữ liệu không?';
+    }
+    // Set the modal message
+    var modal = document.getElementById('confirmModal');
+    var messageEl = document.getElementById('confirmMessage');
+    messageEl.textContent = msg;
+    // Show the modal
+    modal.style.display = 'flex';
+    // Attach confirm handler
+    var yesBtn = document.getElementById('confirmYes');
+    var noBtn = document.getElementById('confirmNo');
+    yesBtn.onclick = function() {
+        modal.style.display = 'none';
+        // Submit the filter form
+        e.target.form.submit();
+    };
+    noBtn.onclick = function() {
+        modal.style.display = 'none';
+    };
+    return false;
+}
+</script>
+
+<!-- Confirmation modal overlay -->
+<style>
+  #confirmModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  #confirmModal .modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+  }
+  #confirmModal button {
+    margin: 10px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #confirmModal button#confirmYes {
+    background: #2563eb;
+    color: #fff;
+  }
+  #confirmModal button#confirmNo {
+    background: #e5e7eb;
+    color: #374151;
+  }
+</style>
+<div id="confirmModal">
+  <div class="modal-content">
+    <p id="confirmMessage" style="margin-bottom:20px;"></p>
+    <button id="confirmYes">Có</button>
+    <button id="confirmNo">Không</button>
+  </div>
+</div>
+
+{% if user %}
+<div style="margin-top:10px; display:flex; gap:10px;">
+    <a href="{{ url_for('pay', username=user.username) }}" class="button" onclick="return confirm('Chuyển tới trang nộp tiền?');">Nộp Tiền</a>
+    {% if user.is_admin %}
+    <a href="{{ url_for('add_violation') }}" class="button" onclick="return confirm('Bạn muốn ghi vi phạm mới?');">Ghi Vi Phạm</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if groups %}
+<div class="summary-container">
+    <div class="summary-header">BẢNG THỐNG KÊ TỔNG HỢP</div>
+    <div id="table-container" style="overflow-x:auto; cursor: grab;">
+<table class="summary-table">
+        <thead>
+            <tr>
+                <th rowspan="2">Tuần</th>
+                <th rowspan="2">Ngày</th>
+                <th rowspan="2">Họ và tên</th>
+                <th colspan="2">Vi Phạm</th>
+                <th rowspan="2" class="tong-tuan">Tổng Số Lần Vi Phạm</th>
+                <th colspan="3" class="tien-phat">Số Tiền Phạt</th>
+                <th rowspan="2" class="ghi-chu">Ghi Chú</th>
+                {% if user %}<th rowspan="2">Thao tác</th>{% endif %}
+            </tr>
+            <tr>
+                <th class="vi-pham">Phân loại</th>
+                <th class="vi-pham">Lí Do</th>
+                <th class="tien-phat">Tổng Phải Nộp</th>
+                <th class="tien-phat">Đã Nộp</th>
+                <th class="tien-phat">Còn Lại</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for group in groups %}
+                {% for item in group.records %}
+                {% set rec = item.record %}
+                <tr>
+                    <td>{{ rec.week }}</td>
+                    <td>{{ rec.date.strftime('%d/%m/%Y') }}</td>
+                    {% if loop.first %}
+                        <td rowspan="{{ group.records|length }}">{{ group.student }}</td>
+                    {% endif %}
+                    <td class="vi-pham">{{ rec.error_code }} - {{ error_dict[rec.error_code] }}</td>
+                    <td class="vi-pham">{{ rec.reason or '' }}</td>
+                    {% if loop.first %}
+                        <td class="tong-tuan" rowspan="{{ group.records|length }}">{{ group.total_count }}</td>
+                        <td class="tien-phat" rowspan="{{ group.records|length }}">{{ format_currency(group.total_due) }}</td>
+                        <td class="tien-phat" rowspan="{{ group.records|length }}">{{ format_currency(group.total_paid) }}</td>
+                        <td class="tien-phat {% if group.total_outstanding > 0 %}remaining-positive{% else %}remaining-zero{% endif %}" rowspan="{{ group.records|length }}">{{ format_currency(group.total_outstanding) }}</td>
+                    {% endif %}
+                    <td class="ghi-chu">{{ rec.notes or '' }}</td>
+                    {% if user %}
+                    <td>
+                        {% if user and user.is_admin %}
+                        <form method="post" action="{{ url_for('delete_violation', violation_id=rec.id) }}" style="display:inline;">
+                            <button type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa vi phạm này?');">Xóa</button>
+                        </form>
+                        {% endif %}
+                        <a href="{{ url_for('complaint', record_id=rec.id) }}">Khiếu nại</a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <div class="summary">
+        <div class="box-green">Tổng quỹ: <strong>{% if user %}{{ format_currency(overall_total_paid) }}{% else %}******{% endif %}</strong></div>
+        <div class="box-red">Nợ chưa thanh toán: <strong>{% if user %}{{ format_currency(overall_total_outstanding) }}{% else %}******{% endif %}</strong></div>
+    </div>
+</div>
+{% else %}
+<p>Không có dữ liệu phù hợp.</p>
+{% endif %}
+
+<script>
+// Enable click‑and‑drag horizontal scrolling for the summary table.  Users can
+// hold the left mouse button on the table container and drag left or right
+// to scroll through wide tables.  This improves usability on desktop
+// screens without requiring the user to use the scrollbar explicitly.
+document.addEventListener('DOMContentLoaded', function() {
+  var container = document.getElementById('table-container');
+  var isDown = false;
+  var startX;
+  var scrollLeft;
+  if (container) {
+    container.addEventListener('mousedown', function(e) {
+      isDown = true;
+      container.classList.add('grabbing');
+      startX = e.pageX - container.offsetLeft;
+      scrollLeft = container.scrollLeft;
+    });
+    container.addEventListener('mouseleave', function() {
+      isDown = false;
+      container.classList.remove('grabbing');
+    });
+    container.addEventListener('mouseup', function() {
+      isDown = false;
+      container.classList.remove('grabbing');
+    });
+    container.addEventListener('mousemove', function(e) {
+      if (!isDown) return;
+      e.preventDefault();
+      var x = e.pageX - container.offsetLeft;
+      var walk = (x - startX) * 1; // adjust sensitivity if needed
+      container.scrollLeft = scrollLeft - walk;
+    });
+  }
+});
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+// Enable click-and-drag horizontal scrolling for the summary table.  Users can
+// hold the left mouse button (or touch on mobile) and drag to scroll
+// horizontally through the table.  The cursor changes to indicate
+// draggable state.
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.getElementById('table-container');
+  if (!container) return;
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+  container.addEventListener('mousedown', function(e) {
+    isDown = true;
+    container.classList.add('active');
+    startX = e.pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+  });
+  container.addEventListener('mouseleave', function() {
+    isDown = false;
+    container.classList.remove('active');
+  });
+  container.addEventListener('mouseup', function() {
+    isDown = false;
+    container.classList.remove('active');
+  });
+  container.addEventListener('mousemove', function(e) {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX);
+    container.scrollLeft = scrollLeft - walk;
+  });
+});
+</script>
+<style>
+/* Change cursor when actively dragging the summary table */
+#table-container.active {
+  cursor: grabbing;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Quản trị viên{% endblock %}
+{% block content %}
+<h2>Quản trị viên</h2>
+<style>
+  table.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  table.admin-table th,
+  table.admin-table td {
+    border: 1px solid #e5e7eb;
+    padding: 8px;
+    text-align: center;
+  }
+  table.admin-table th {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+  table.admin-table tbody tr:nth-child(odd) {
+    background-color: #fafafa;
+  }
+  table.admin-table tbody tr:hover {
+    background-color: #fef3c7;
+  }
+</style>
+<h3>Danh sách khiếu nại</h3>
+{% if complaints %}
+<form method="post" action="{{ url_for('admin') }}">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Người gửi</th>
+                <th>Người bị khiếu nại</th>
+                <th>Mã lỗi</th>
+                <th>Nội dung</th>
+                <th>Ngày gửi</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in complaints %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.user.display_name }}</td>
+                <td>{{ c.target_student }}</td>
+                <td>{{ c.error_code }}</td>
+                <td>{{ c.message }}</td>
+                <td>{{ c.submitted_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{% if c.resolved %}Đã giải quyết{% else %}Chưa{% endif %}</td>
+                <td>
+                    {% if not c.resolved %}
+                        <form method="post" action="{{ url_for('admin') }}" style="display:inline;">
+                            <button type="submit" name="resolve_id" value="{{ c.id }}" onclick="return confirm('Bạn có chắc chắn đánh dấu khiếu nại này đã giải quyết?');">Đánh dấu đã giải quyết</button>
+                        </form>
+                        <form method="post" action="{{ url_for('delete_violation', violation_id=c.violation_id) }}" style="display:inline;">
+                            <button type="submit" onclick="return confirm('Bạn có chắc chắn muốn xóa vi phạm này?');">Xóa Vi Phạm</button>
+                        </form>
+                    {% else %}
+                        <span>Đã giải quyết</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+{% else %}
+<p>Không có khiếu nại nào.</p>
+{% endif %}
+<h3>Lịch sử giao dịch</h3>
+{% if payments %}
+<p>Tổng số giao dịch: <strong>{{ total_payment_count }}</strong>. Tổng tiền đã thu: <strong>{{ format_currency(total_payment_amount) }}</strong>.</p>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>STT</th>
+            <th>Người nộp</th>
+            <th>Học sinh</th>
+            <th>Số tiền</th>
+            <th>Mã lỗi</th>
+            <th>Ngày giao dịch</th>
+            <th>Ghi chú</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in payments %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.user.display_name }}</td>
+            <td>{{ p.user.student_name or '' }}</td>
+            <td>{{ format_currency(p.amount) }}</td>
+            <td>{{ p.error_code }}</td>
+            <td>{{ p.transfer_date.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ p.note or '' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Không có giao dịch nào.</p>
+{% endif %}
+{% endblock %}

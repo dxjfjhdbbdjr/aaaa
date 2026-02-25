@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Ghi Vi Phạm{% endblock %}
+{% block extra_head %}
+<style>
+  .add-form {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .add-form h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1f2937;
+  }
+  .add-form .form-group {
+    margin-bottom: 15px;
+  }
+  .add-form label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .add-form input,
+  .add-form select,
+  .add-form textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .add-form button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .add-form button:hover {
+    background: #1e40af;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="add-form">
+  <h2>Ghi Vi Phạm Mới</h2>
+  <form method="post" action="{{ url_for('add_violation') }}">
+    <div class="form-group">
+      <label for="student">Họ và tên</label>
+      <select name="student" id="student" required>
+        <option value="">-- Chọn học sinh --</option>
+        {% for n in names %}
+          <option value="{{ n }}">{{ n }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="date">Ngày vi phạm</label>
+      <input type="date" id="date" name="date" value="{{ (datetime.utcnow().date()).strftime('%Y-%m-%d') }}" required>
+    </div>
+    <div class="form-group">
+      <label for="error_code">Mã lỗi</label>
+      <select name="error_code" id="error_code" required onchange="updateAmount()">
+        <option value="">-- Chọn mã lỗi --</option>
+        {% for c in codes %}
+          <option value="{{ c.code }}" data-default="{{ c.default_amount }}">{{ c.code }} - {{ c.description }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="amount">Số tiền phải nộp (VND)</label>
+      <input type="text" id="amount" name="amount" placeholder="Nhập số tiền hoặc để trống để dùng mặc định">
+    </div>
+    <div class="form-group">
+      <label for="reason">Lí do (tùy chọn)</label>
+      <input type="text" id="reason" name="reason" placeholder="Mô tả ngắn về vi phạm">
+    </div>
+    <div class="form-group">
+      <label for="notes">Ghi chú (tùy chọn)</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="Thông tin bổ sung"></textarea>
+    </div>
+    <button type="submit">Lưu Vi Phạm</button>
+  </form>
+</div>
+<script>
+// Compute and auto-fill amount based on student, date and error code.
+function updateAmount() {
+  var student = document.getElementById('student').value;
+  var date = document.getElementById('date').value;
+  var code = document.getElementById('error_code').value;
+  // Only attempt calculation if all fields are chosen
+  if (!student || !date || !code) {
+    // fallback to default display from selected code
+    var select = document.getElementById('error_code');
+    var opt = select.options[select.selectedIndex];
+    var def = opt ? opt.getAttribute('data-default') : '';
+    if (def && def !== '0') {
+      document.getElementById('amount').value = parseInt(def).toLocaleString('vi-VN');
+    } else {
+      document.getElementById('amount').value = '';
+    }
+    return;
+  }
+  // Call the calculation API
+  var url = '/violation/calculate_amount?student=' + encodeURIComponent(student) + '&date=' + encodeURIComponent(date) + '&error_code=' + encodeURIComponent(code);
+  fetch(url)
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+      var amountInput = document.getElementById('amount');
+      if (amountInput && data.amount !== undefined) {
+        if (data.amount > 0) {
+          amountInput.value = parseInt(data.amount).toLocaleString('vi-VN');
+        } else {
+          amountInput.value = '';
+        }
+      }
+    });
+}
+// Attach listeners to update amount when relevant fields change
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('student').addEventListener('change', updateAmount);
+  document.getElementById('date').addEventListener('change', updateAmount);
+  document.getElementById('error_code').addEventListener('change', updateAmount);
+});
+</script>
+{% endblock %}

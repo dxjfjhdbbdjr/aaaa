@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Khiếu nại{% endblock %}
+{% block content %}
+<h2>Khiếu nại vi phạm</h2>
+<p>Họ và tên: <strong>{{ record.student_name }}</strong></p>
+<p>Ngày: {{ record.date.strftime('%d/%m/%Y') }}</p>
+<p>Lỗi: {{ record.error_code }}{% if record.reason %} - {{ record.reason }}{% endif %}</p>
+<p>Số tiền: {{ format_currency(record.amount_due) }}</p>
+<form method="post" action="{{ url_for('complaint', record_id=record.id) }}">
+    <label for="error_code">Chọn mã lỗi muốn khiếu nại</label>
+    <select name="error_code" id="error_code">
+        {% for c in codes %}
+            <option value="{{ c.code }}" {% if c.code == record.error_code %}selected{% endif %}>{{ c.code }} - {{ c.description }}</option>
+        {% endfor %}
+    </select>
+    <label for="email">Email của bạn</label>
+    <input type="email" id="email" name="email" required>
+    <label for="message">Nội dung khiếu nại</label>
+    <textarea id="message" name="message" rows="5" required></textarea>
+    <button type="submit">Gửi khiếu nại</button>
+</form>
+{% endblock %}

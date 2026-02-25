@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Chọn học sinh để nộp tiền{% endblock %}
+{% block content %}
+{% set is_admin = admin_select if admin_select is not none else false %}
+<h2>{% if is_admin %}Chọn học sinh cần thanh toán{% else %}Chọn học sinh để nộp tiền{% endif %}</h2>
+{# For administrators, use GET so that the selected student appears in the query string.  For
+   regular users, POST persists the selected student on their account. #}
+<form method="{{ 'get' if is_admin else 'post' }}" action="">
+    <label for="student_name">Họ và tên học sinh</label>
+    <select name="{{ 'student' if is_admin else 'student_name' }}" id="student_name" required>
+        <option value="">-- Chọn tên --</option>
+        {% for n in names %}
+            <option value="{{ n }}">{{ n }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="button">Tiếp tục</button>
+</form>
+{% endblock %}

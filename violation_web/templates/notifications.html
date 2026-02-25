@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Thông báo{% endblock %}
+{% block extra_head %}
+<style>
+  .notifications-page {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .notifications-page h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1f2937;
+  }
+  .notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+  .notification-item.unread {
+    background: #eff6ff;
+  }
+  .notification-item .message {
+    flex: 1;
+    color: #374151;
+  }
+  .notification-item .date {
+    font-size: 12px;
+    color: #6b7280;
+    margin-left: 10px;
+    white-space: nowrap;
+  }
+  .mark-all {
+    display: block;
+    margin-bottom: 10px;
+    text-align: right;
+  }
+  .mark-all button {
+    padding: 6px 12px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .mark-all button:hover {
+    background: #1e40af;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="notifications-page">
+  <h2>Thông Báo</h2>
+  {% if notifications %}
+    <form class="mark-all" method="post" action="{{ url_for('notifications_read_all') }}">
+      <button type="submit">Đánh dấu tất cả đã đọc</button>
+    </form>
+    <div>
+      {% for n in notifications %}
+        <div class="notification-item {% if not n.is_read %}unread{% endif %}">
+          <div class="message">
+            <a href="{{ url_for('notification_detail', note_id=n.id) }}" style="text-decoration:none; color:inherit;">
+              {{ n.message }}
+            </a>
+          </div>
+          <div class="date">{{ n.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Không có thông báo nào.</p>
+  {% endif %}
+</div>
+{% endblock %}

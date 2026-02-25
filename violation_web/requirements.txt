@@ -1,0 +1,9 @@
+Flask>=2.3
+Flask_SQLAlchemy>=3.0
+Werkzeug>=3.0
+pandas>=2.0
+openpyxl>=3.0
+qrcode[pil]
+Pillow
+psycopg2-binary
+gunicorn
