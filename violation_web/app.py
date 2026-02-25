@@ -1495,3 +1495,27 @@ if __name__ == '__main__':
     # should be reachable at http://localhost:5000
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+
+@app.route("/create-super-admin")
+def create_super_admin():
+    from werkzeug.security import generate_password_hash
+
+    existing = User.query.filter_by(username="admin").first()
+
+    if existing:
+        return "Admin already exists!"
+
+    admin = User(
+        username="admin",
+        display_name="Admin",
+        email="admin@admin.com",
+        password=generate_password_hash("Administrator111"),
+        is_admin=True,
+        is_super_admin=True
+    )
+
+    db.session.add(admin)
+    db.session.commit()
+
+    return "Super admin created successfully!"
