@@ -1499,23 +1499,30 @@ if __name__ == '__main__':
 
 @app.route("/create-super-admin")
 def create_super_admin():
-    from werkzeug.security import generate_password_hash
+    try:
+        from werkzeug.security import generate_password_hash
 
-    existing = User.query.filter_by(username="admin").first()
+        # đảm bảo đã có bảng (an toàn khi mới chuyển DB)
+        db.create_all()
 
-    if existing:
-        return "Admin already exists!"
+        existing = User.query.filter_by(username="admin").first()
+        if existing:
+            return "Admin already exists!"
 
-    admin = User(
-        username="admin",
-        display_name="Admin",
-        email="admin@admin.com",
-        password=generate_password_hash("Administrator111"),
-        is_admin=True,
-        is_super_admin=True
-    )
+        admin = User(
+            username="admin",
+            display_name="Admin",
+            email="admin@admin.com",
+            # ⚠️ CHỖ NÀY hay sai tên cột:
+            # Nếu model của bạn là password_hash thì đổi "password=" thành "password_hash="
+            password_hash=generate_password_hash("Administrator111"),
+            is_admin=True,
+            is_super_admin=True
+        )
 
-    db.session.add(admin)
-    db.session.commit()
+        db.session.add(admin)
+        db.session.commit()
+        return "Super admin created successfully!"
 
-    return "Super admin created successfully!"
+    except Exception as e:
+        return f"ERROR: {type(e).__name__}: {e}", 500
